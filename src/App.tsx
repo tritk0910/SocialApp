@@ -22,9 +22,11 @@ function App() {
   return (
     <main className="min-h-screen">
       <NavBar />
-      <div className="h-[calc(100vh-65px)] px-[500px] pt-5">
+      <div className="flex flex-col items-center w-full pt-5 px-10">
+        <div className="max-w-[700px] w-full">
         <PostInput setListOfPosts={setListOfPosts} />
         <PostList listOfPosts={listOfPosts} setListOfPosts={setListOfPosts} />
+        </div>
       </div>
     </main>
   );
