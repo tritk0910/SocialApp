@@ -18,9 +18,10 @@ import CommentList from "./CommentList";
 import { Textarea } from "./ui/textarea";
 import { deletePost, updatePost } from "@/api/post";
 import { PostModel } from "@/model/post";
-import { createComment } from "@/api/comment";
 import { useToast } from "./ui/use-toast";
 import { CommentModel } from "@/model/comment";
+import { useMutation } from "@tanstack/react-query";
+import CommentInput from "./CommentInput";
 
 interface Props {
   post: PostModel;
@@ -31,8 +32,9 @@ export default function Post({ post, setListOfPosts }: Props) {
   const [like, isLike] = useState<boolean>(false);
   const [editedContent, setEditedContent] = useState<string>("");
   const [isEdit, setIsEdit] = useState<boolean>(false);
-  const [commentInput, setCommentInput] = useState<string>("");
-  const [comments, setComments] = useState<CommentModel[]>(post.comments || []);
+  const [comments, setComments] = useState<CommentModel[]>(
+    post?.comments || []
+  );
 
   const { toast } = useToast();
 
@@ -41,19 +43,28 @@ export default function Post({ post, setListOfPosts }: Props) {
     setEditedContent(post?.body || "");
   };
 
+  const { mutate: serverHandleUpdate, isPending } = useMutation({
+    mutationFn: updatePost,
+    onSuccess: () => {
+      setListOfPosts((prevPosts) =>
+        prevPosts.map((p) =>
+          p.id === post.id ? { ...p, body: editedContent } : p
+        )
+      );
+      toast({ title: "Post updated successfully" });
+      setIsEdit(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to update post", variant: "destructive" });
+    },
+  });
+
   const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    updatePost({
+    serverHandleUpdate({
       id: post.id!,
       body: editedContent,
     });
-    setListOfPosts((prevPosts) =>
-      prevPosts.map((p) =>
-        p.id === post.id ? { ...p, body: editedContent } : p
-      )
-    );
-    toast({ title: "Post updated successfully" });
-    setIsEdit(false);
   };
 
   const handleCancelUpdate = () => {
@@ -64,21 +75,6 @@ export default function Post({ post, setListOfPosts }: Props) {
     deletePost(post.id!);
     setIsEdit(false);
     setListOfPosts((prevPosts) => prevPosts.filter((p) => p.id !== post.id));
-  };
-
-  const handleSubmitComment = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!commentInput)
-      return toast({
-        title: "Comment cannot be empty!",
-        variant: "destructive",
-      });
-    const newComment = await createComment({
-      postId: post.id!,
-      message: commentInput,
-    });
-    setComments((prevComments) => [...prevComments, newComment]);
-    setCommentInput("");
   };
 
   return (
@@ -127,8 +123,11 @@ export default function Post({ post, setListOfPosts }: Props) {
                   onChange={(e) => setEditedContent(e.target.value)}
                 />
                 <div className="text-right space-x-2">
-                  <Button type="submit">Update</Button>
+                  <Button type="submit" disabled={isPending}>
+                    Update
+                  </Button>
                   <Button
+                    disabled={isPending}
                     variant="destructive"
                     onClick={() => handleCancelUpdate()}
                   >
@@ -171,39 +170,14 @@ export default function Post({ post, setListOfPosts }: Props) {
             </button>
           </div>
           <AccordionContent>
-            <div className="flex justify-center items-center gap-x-2 pt-3">
-              <Avatar>
-                <AvatarImage
-                  src="https://github.com/shadcn.png"
-                  alt="@shadcn"
-                />
-              </Avatar>
-              <form
-                className="flex justify-between items-center w-full"
-                onSubmit={handleSubmitComment}
-              >
-                <input
-                  className="outline-none w-full border-t-2 border-l-2 border-b-2 rounded-l-sm pl-3 py-[6px]"
-                  type="text"
-                  placeholder="What are you thinking bout this post?"
-                  value={commentInput}
-                  onChange={(e) => setCommentInput(e.target.value)}
-                />
-                <button
-                  type="submit"
-                  className={buttonVariants({
-                    variant: "default",
-                    className: "rounded-l-none",
-                  })}
-                >
-                  Comment
-                </button>
-              </form>
-            </div>
+            <CommentInput post={post} setComments={setComments} />
           </AccordionContent>
           {post?.comments && (
             <div className="comment-list pt-5 pl-10">
-              <CommentList comments={comments} setComments={setComments} />
+              <CommentList
+                comments={comments}
+                setComments={setComments}
+              />
             </div>
           )}
         </AccordionItem>

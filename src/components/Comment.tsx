@@ -12,6 +12,7 @@ import { Textarea } from "./ui/textarea";
 import { deleteComment, editComment } from "@/api/comment";
 import { CommentModel } from "@/model/comment";
 import { useToast } from "./ui/use-toast";
+import { useMutation } from "@tanstack/react-query";
 
 interface Props {
   id: number;
@@ -26,6 +27,22 @@ export default function Comment({ id, postId, content, setComments }: Props) {
 
   const { toast } = useToast();
 
+  const { mutate: serverEditComment, isPending } = useMutation({
+    mutationFn: editComment,
+    onSuccess: () => {
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === id ? { ...comment, message: editedContent } : comment
+        )
+      );
+      toast({ title: "Comment updated successfully" });
+      setIsEdit(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to update comment", variant: "destructive" });
+    },
+  });
+
   const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editedContent)
@@ -33,17 +50,11 @@ export default function Comment({ id, postId, content, setComments }: Props) {
         title: "You cannot leave that empty!",
         variant: "destructive",
       });
-    editComment({
+    serverEditComment({
       id: id,
       postId: postId,
       message: editedContent,
     });
-    setComments((prevComments) =>
-      prevComments.map((comment) =>
-        comment.id === id ? { ...comment, message: editedContent } : comment
-      )
-    );
-    setIsEdit(false);
   };
 
   const handleCancelUpdate = () => {
@@ -109,8 +120,11 @@ export default function Comment({ id, postId, content, setComments }: Props) {
               onChange={(e) => setEditedContent(e.target.value)}
             />
             <div className="text-right space-x-2">
-              <Button type="submit">Update</Button>
+              <Button type="submit" disabled={isPending}>
+                Update
+              </Button>
               <Button
+                disabled={isPending}
                 variant="destructive"
                 onClick={() => handleCancelUpdate()}
               >

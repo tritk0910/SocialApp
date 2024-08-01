@@ -8,7 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 
 function App() {
   const [listOfPosts, setListOfPosts] = useState<PostModel[]>([]);
-  const { mutate: getPosts } = useMutation({
+  const { mutate: serverGetAllPosts } = useMutation({
     mutationFn: getAllPosts,
     onSuccess: (data) => {
       setListOfPosts(data.reverse());
@@ -16,8 +16,8 @@ function App() {
   });
 
   useEffect(() => {
-    getPosts();
-  }, [getPosts]);
+    serverGetAllPosts();
+  }, [serverGetAllPosts]);
 
   return (
     <main className="min-h-screen">

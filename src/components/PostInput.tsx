@@ -13,7 +13,7 @@ export default function PostInput({ setListOfPosts }: Props) {
   const [input, setInput] = useState<string>("");
   const { toast } = useToast();
 
-  const { mutate: createNewPost } = useMutation({
+  const { mutate: serverCreatePost, isPending } = useMutation({
     mutationFn: createPost,
     onSuccess: (newPost) => {
       setListOfPosts((prevPosts) => [newPost, ...prevPosts]);
@@ -28,8 +28,7 @@ export default function PostInput({ setListOfPosts }: Props) {
     e.preventDefault();
     if (!input)
       return toast({ title: "Post cannot be empty!", variant: "destructive" });
-
-    createNewPost({
+    serverCreatePost({
       body: input,
     });
   };
@@ -49,6 +48,7 @@ export default function PostInput({ setListOfPosts }: Props) {
         />
         <button
           type="submit"
+          disabled={isPending}
           className={buttonVariants({
             variant: "default",
             className: "rounded-l-none",
