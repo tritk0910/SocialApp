@@ -8,7 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 
 function App() {
   const [listOfPosts, setListOfPosts] = useState<PostModel[]>([]);
-  const { mutate: serverGetAllPosts } = useMutation({
+  const { mutate: serverGetAllPosts, isPending } = useMutation({
     mutationFn: getAllPosts,
     onSuccess: (data) => {
       setListOfPosts(data.reverse());
@@ -25,7 +25,7 @@ function App() {
       <div className="flex flex-col items-center w-full pt-5 px-10">
         <div className="max-w-[700px] w-full">
         <PostInput setListOfPosts={setListOfPosts} />
-        <PostList listOfPosts={listOfPosts} setListOfPosts={setListOfPosts} />
+        <PostList isPending={isPending} listOfPosts={listOfPosts} setListOfPosts={setListOfPosts} />
         </div>
       </div>
     </main>
